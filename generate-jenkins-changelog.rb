@@ -22,33 +22,38 @@ diff.each_line do |line|
 	entry = {}
 	if pr != nil
 
-		pr_comment_string = `curl -u #{curl_auth} https://api.github.com/repos/jenkinsci/jenkins/pulls/#{pr[1]}`
-		pr_json = JSON.parse(pr_comment_string)
+		pr_comment_string = `curl --fail -u #{curl_auth} https://api.github.com/repos/jenkinsci/jenkins/pulls/#{pr[1]}`
+		if $?.exitstatus  == 0
 
-		entry['type'] = 'TODO'
-		entry['pull'] = pr[1].to_i
-		if issue != nil
-			entry['issue'] = issue[1].to_i
+			pr_json = JSON.parse(pr_comment_string)
+
+			entry['type'] = 'TODO'
+			entry['pull'] = pr[1].to_i
+			if issue != nil
+				entry['issue'] = issue[1].to_i
+			end
+
+			proposed_changelog = /### Proposed changelog entries(.*?)###/m.match(pr_json['body'])
+			if proposed_changelog != nil
+				proposed_changelog = proposed_changelog[1].gsub("\r\n", "\n").gsub(/<!--.*?-->/m, "").strip
+			end
+
+			# The presence of '\n' in this string is significant:
+			# It's one of the ways the Psych YAML library uses to determine what format to print a string in.
+			# This one makes it print a string literal (starting with |), which is easier to edit.
+			# https://github.com/ruby/psych/blob/e01839af57df559b26f74e906062be6c692c89c8/lib/psych/visitors/yaml_tree.rb#L299
+			if proposed_changelog == nil || proposed_changelog.empty?
+				proposed_changelog = "No changelog for:\n#{pr_json['title']}"
+			end
+
+			entry['message'] = "TODO fixup changelog:\n#{proposed_changelog.strip}"
+
+			issues << entry
+		else
+			puts "Failed to retrieve PR metadata for #{pr[1]}"
 		end
-
-		proposed_changelog = /### Proposed changelog entries(.*?)###/m.match(pr_json['body'])
-		if proposed_changelog != nil
-			proposed_changelog = proposed_changelog[1].gsub("\r\n", "\n").gsub(/<!--.*?-->/m, "").strip
-		end
-
-		# The presence of '\n' in this string is significant:
-		# It's one of the ways the Psych YAML library uses to determine what format to print a string in.
-		# This one makes it print a string literal (starting with |), which is easier to edit.
-		# https://github.com/ruby/psych/blob/e01839af57df559b26f74e906062be6c692c89c8/lib/psych/visitors/yaml_tree.rb#L299
-		if proposed_changelog == nil || proposed_changelog.empty?
-			proposed_changelog = "No changelog for:\n#{pr_json['title']}"
-		end
-
-		entry['message'] = "TODO fixup changelog:\n#{proposed_changelog.strip}"
-
-		issues << entry
 	else
-		nil # debug output: No PR found
+		puts "No PR found for #{sha}: #{full_message}"
 	end
 end
 
