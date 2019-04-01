@@ -33,7 +33,7 @@ diff.each_line do |line|
 				entry['issue'] = issue[1].to_i
 			end
 
-			proposed_changelog = /### Proposed changelog entries(.*?)###/m.match(pr_json['body'])
+			proposed_changelog = /### Proposed changelog entries(.*?)(###|\Z)/m.match(pr_json['body'])
 			if proposed_changelog != nil
 				proposed_changelog = proposed_changelog[1].gsub("\r\n", "\n").gsub(/<!--.*?-->/m, "").strip
 			end
