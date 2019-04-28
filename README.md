@@ -9,5 +9,7 @@ This tool can be used to generate a first draft of a Jenkins release's changelog
 ```
 cd /path/to/clone/of/jenkinsci/jenkins.git
 export CURL_AUTH=github_username:github_token
+
 /path/to/generate-jenkins-changelog.rb <VERSION>
+/path/to/generate-jenkins-changelog.rb <COMMIT>..<COMMIT>
 ```

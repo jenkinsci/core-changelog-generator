@@ -9,8 +9,16 @@ issues = []
 
 curl_auth = ENV['CURL_AUTH']
 
+if Dir.glob("licenseCompleter.groovy").empty?
+	puts "Usage:    generate-jenkins-changelog.rb <versions>"
+	puts ""
+	puts "This script needs to be run from a jenkinsci/jenkins clone."
+	exit
+end
+
 if ARGV.length == 0
 	puts "Usage:    generate-jenkins-changelog.rb <versions>"
+	puts ""
 	puts "Missing argument <versions>"
 	puts "To generate the changelog between two commits or tags, specify then with '..' separator:"
 	puts "          generate-jenkins-changelog.rb jenkins-2.174..master"
@@ -33,7 +41,7 @@ puts "Checking range from #{previous_version} to #{new_version}"
 
 # We generally want --first-parent here unless it's the weekly after a security update
 # In that case, the merge commit after release will hide anything merged Monday through Wednesday
-diff = `git log --first-parent --pretty=oneline #{previous_version}..#{new_version}`
+diff = `git log --pretty=oneline #{previous_version}..#{new_version}`
 
 diff.each_line do |line|
 	pr = /#([0-9]{4,5})[) ]/.match(line)
