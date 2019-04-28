@@ -9,13 +9,34 @@ issues = []
 
 curl_auth = ENV['CURL_AUTH']
 
-new_version = ARGV[0]
-previous_version = "#{new_version.split('.')[0]}.#{new_version.split('.')[1].to_i - 1}"
+if ARGV.length == 0
+	puts "Usage:    generate-jenkins-changelog.rb <versions>"
+	puts "Missing argument <versions>"
+	puts "To generate the changelog between two commits or tags, specify then with '..' separator:"
+	puts "          generate-jenkins-changelog.rb jenkins-2.174..master"
+	puts "To generate the changelog for an existing Jenkins release (i.e. from the previous release), specify the version number:"
+	puts "          generate-jenkins-changelog.rb 2.174"
+	exit
+end
 
-diff = `git log --pretty=oneline --first-parent jenkins-#{previous_version}..jenkins-#{new_version}`
+if ARGV[0] =~ /\.\./
+	# this is a commit range
+	new_version = ARGV[0].split('..')[1]
+	previous_version = ARGV[0].split('..')[0]
+else
+	new_version = "jenkins-#{ARGV[0]}"
+	splitted = new_version.rpartition('.')
+	previous_version = "#{splitted.first}.#{splitted.last.to_i - 1}"
+end
+
+puts "Checking range from #{previous_version} to #{new_version}"
+
+# We generally want --first-parent here unless it's the weekly after a security update
+# In that case, the merge commit after release will hide anything merged Monday through Wednesday
+diff = `git log --first-parent --pretty=oneline #{previous_version}..#{new_version}`
 
 diff.each_line do |line|
-	pr = /#([0-9]{4,5})/.match(line)
+	pr = /#([0-9]{4,5})[) ]/.match(line)
 	sha = /^([0-9a-f]{40}) /.match(line)[1]
 	full_message = `git log --pretty="%s%n%n%b" #{sha}^..#{sha}`
 	issue = /JENKINS-([0-9]{3,5})/.match(full_message.encode("UTF-16be", :invalid=>:replace, :replace=>"?").encode('UTF-8'))
@@ -43,23 +64,23 @@ diff.each_line do |line|
 			# This one makes it print a string literal (starting with |), which is easier to edit.
 			# https://github.com/ruby/psych/blob/e01839af57df559b26f74e906062be6c692c89c8/lib/psych/visitors/yaml_tree.rb#L299
 			if proposed_changelog == nil || proposed_changelog.empty?
-				proposed_changelog = "No changelog for:\n#{pr_json['title']}"
+				proposed_changelog = "(No proposed changelog)"
 			end
 
-			entry['message'] = "TODO fixup changelog:\n#{proposed_changelog.strip}"
+			entry['message'] = "TODO fixup changelog:\nPR title: #{pr_json['title']}\nProposed changelog:\n#{proposed_changelog.strip}"
 
 			issues << entry
 		else
-			puts "Failed to retrieve PR metadata for #{pr[1]}"
+			puts "Failed to retrieve PR metadata for <<<<<#{pr[1]}>>>>>"
 		end
 	else
-		puts "No PR found for #{sha}: #{full_message}"
+		puts "No PR found for #{sha}: <<<<<#{full_message.lines.first.strip}>>>>>"
 	end
 end
 
 root = {}
 root['version'] = new_version
-root['date'] = Date.parse(`git log --pretty='%ad' --date=short jenkins-#{new_version}^..jenkins-#{new_version}`.strip)
+root['date'] = Date.parse(`git log --pretty='%ad' --date=short #{new_version}^..#{new_version}`.strip)
 root['changes'] = issues
 
 puts [root].to_yaml
