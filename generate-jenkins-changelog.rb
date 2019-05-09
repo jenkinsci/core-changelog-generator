@@ -7,7 +7,7 @@ git_repo = Dir.pwd
 
 issues = []
 
-curl_auth = ENV['CURL_AUTH']
+curl_auth = ENV['GITHUB_AUTH']
 
 if Dir.glob("licenseCompleter.groovy").empty?
 	puts "Usage:    generate-jenkins-changelog.rb <versions>"
