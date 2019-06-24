@@ -87,7 +87,7 @@ diff.each_line do |line|
 end
 
 root = {}
-root['version'] = new_version
+root['version'] = new_version.sub(/jenkins-/, '')
 root['date'] = Date.parse(`git log --pretty='%ad' --date=short #{new_version}^..#{new_version}`.strip)
 root['changes'] = issues
 
