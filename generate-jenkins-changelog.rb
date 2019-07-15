@@ -50,8 +50,9 @@ diff.each_line do |line|
 	issue = /JENKINS-([0-9]{3,5})/.match(full_message.encode("UTF-16be", :invalid=>:replace, :replace=>"?").encode('UTF-8'))
 	entry = {}
 	if pr != nil
+		puts "PR #{pr[1]} found for #{sha}"
 
-		pr_comment_string = `curl --fail -u #{curl_auth} https://api.github.com/repos/jenkinsci/jenkins/pulls/#{pr[1]}`
+		pr_comment_string = `curl --fail --silent -u #{curl_auth} https://api.github.com/repos/jenkinsci/jenkins/pulls/#{pr[1]}`
 		if $?.exitstatus  == 0
 
 			pr_json = JSON.parse(pr_comment_string)
