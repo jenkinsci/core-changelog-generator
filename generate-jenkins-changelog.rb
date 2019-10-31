@@ -6,6 +6,7 @@ require 'json'
 git_repo = Dir.pwd
 
 issues = []
+hidden = []
 
 curl_auth = ENV['GITHUB_AUTH']
 
@@ -57,7 +58,14 @@ diff.each_line do |line|
 
 			pr_json = JSON.parse(pr_comment_string)
 
+			labels = pr_json['labels'].map { |l| l["name"] }
+
 			entry['type'] = 'TODO'
+			entry['type'] = 'major bug' if labels.include?("major-bug")
+			entry['type'] = 'major rfe' if labels.include?("major-rfe")
+			entry['type'] = 'bug' if labels.include?("bug")
+			entry['type'] = 'rfe' if labels.include?("rfe")
+
 			entry['pull'] = pr[1].to_i
 			if issue != nil
 				entry['issue'] = issue[1].to_i
@@ -76,9 +84,13 @@ diff.each_line do |line|
 				proposed_changelog = "(No proposed changelog)"
 			end
 
-			entry['message'] = "TODO fixup changelog:\nPR title: #{pr_json['title']}\nProposed changelog:\n#{proposed_changelog.strip}"
-
-			issues << entry
+			if labels.include?("skip-changelog")
+				entry['message'] = "PR title: #{pr_json['title']}"
+				hidden << entry
+			else
+				entry['message'] = "TODO fixup changelog:\nPR title: #{pr_json['title']}\nProposed changelog:\n#{proposed_changelog.strip}"
+				issues << entry
+			end
 		else
 			puts "Failed to retrieve PR metadata for <<<<<#{pr[1]}>>>>>"
 		end
@@ -87,9 +99,22 @@ diff.each_line do |line|
 	end
 end
 
+issues_by_type = issues.group_by { |issue| issue['type'] }
+
+issues = []
+['major rfe', 'major bug', 'rfe', 'bug', 'TODO'].each do |type|
+	if issues_by_type.has_key?(type)
+		issues << issues_by_type[type]
+	end
+end
+issues = issues.flatten
+
 root = {}
 root['version'] = new_version.sub(/jenkins-/, '')
 root['date'] = Date.parse(`git log --pretty='%ad' --date=short #{new_version}^..#{new_version}`.strip)
 root['changes'] = issues
 
 puts [root].to_yaml
+hidden.sort { |a, b| a['pull'] <=> b['pull'] }.each do | entry |
+	puts "  # pull: #{entry['pull']} (PR title: #{entry['message']})"
+end
