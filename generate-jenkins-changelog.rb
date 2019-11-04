@@ -116,5 +116,5 @@ root['changes'] = issues
 
 puts [root].to_yaml
 hidden.sort { |a, b| a['pull'] <=> b['pull'] }.each do | entry |
-	puts "  # pull: #{entry['pull']} (PR title: #{entry['message']})"
+	puts "  # pull: #{entry['pull']} (#{entry['message']})"
 end
