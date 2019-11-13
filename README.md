@@ -34,7 +34,7 @@ export JIRA_AUTH=jira_username:jira_password
 
 There is also a Dockerized version available:
 
-* To reuse the Jenkins source code, pass the `/src/jenkins` volume, e.g. `-v $(pwd)/test/jenkins:/src/jenkins`.
+* To reuse the Jenkins source code, pass the `/github/workspace` volume, e.g. `-v $(pwd)/test/jenkins:/github/workspace`.
   In such case there will be also a `changelog.yaml` file generated in the root of the repo
 * To generate an LTS backports changelog, pass the `-e CHANGELOG_TYPE=lts` variable.
 * If there is no arguments passed, the script will generate changelog since the last tag on the current branch
@@ -43,12 +43,12 @@ Generating changelog for pending changes:
 
 ```sh
 export GITHUB_AUTH=github_username:github_token
-docker run -e GITHUB_AUTH=${GITHUB_AUTH} -v $(pwd):/src/jenkins --rm onenashev/jenkins-changelog-generator
+docker run -e GITHUB_AUTH=${GITHUB_AUTH} -v $(pwd):/github/workspace --rm onenashev/jenkins-changelog-generator
 ```
 
 Generating changelog for a release:
 
 ```sh
 export GITHUB_AUTH=github_username:github_token
-docker run -e GITHUB_AUTH=${GITHUB_AUTH} -v $(pwd):/src/jenkins --rm onenashev/jenkins-changelog-generator 2.204
+docker run -e GITHUB_AUTH=${GITHUB_AUTH} -v $(pwd):/github/workspace --rm onenashev/jenkins-changelog-generator 2.204
 ```
