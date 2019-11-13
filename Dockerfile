@@ -3,6 +3,7 @@ FROM ruby
 COPY generate-jenkins-changelog.rb /jenkins-changelog-generator/bin/generate-jenkins-changelog
 COPY lts-backports-changelog.rb /jenkins-changelog-generator/bin/lts-backports-changelog
 COPY docker-runner.rb /jenkins-changelog-generator/bin/jenkins-changelog-generator
+RUN chmod +x /jenkins-changelog-generator/bin/*
 
 VOLUME /github/workspace
 
