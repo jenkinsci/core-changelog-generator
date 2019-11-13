@@ -10,6 +10,5 @@ WORKDIR /github/workspace
 
 # Forces creationg 
 ENV CHANGELOG_YAML_PATH=/github/workspace/changelog.yaml
-ENV PATH=${PATH}:/jenkins-changelog-generator/bin
 
-ENTRYPOINT ["jenkins-changelog-generator"]
+ENTRYPOINT ["/jenkins-changelog-generator/bin/jenkins-changelog-generator"]

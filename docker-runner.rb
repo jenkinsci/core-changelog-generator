@@ -18,7 +18,7 @@ if args.empty?
 end
 
 if ENV["CHANGELOG_TYPE"] == "lts"
-    system("lts-backports-changelog", *args)
+    system("/jenkins-changelog-generator/bin/lts-backports-changelog", *args)
 else
-    system("generate-jenkins-changelog", *args)
+    system("/jenkins-changelog-generator/bin/generate-jenkins-changelog", *args)
 end
