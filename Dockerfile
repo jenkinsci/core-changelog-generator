@@ -9,7 +9,7 @@ VOLUME /github/workspace
 
 WORKDIR /github/workspace
 
-# Forces creationg 
+# Forces creation
 ENV CHANGELOG_YAML_PATH=/github/workspace/changelog.yaml
 
 ENTRYPOINT ["/jenkins-changelog-generator/bin/jenkins-changelog-generator"]
