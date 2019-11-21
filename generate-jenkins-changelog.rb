@@ -2,7 +2,6 @@
 
 require 'yaml'
 require 'json'
-require 'date'
 
 git_repo = Dir.pwd
 
