@@ -49,4 +49,11 @@ changelog.each do |version|
 	end
 end
 
-puts backported_issues.to_yaml
+changelog_yaml = backported_issues.to_yaml
+puts changelog_yaml
+
+changelog_path = ENV["CHANGELOG_YAML_PATH"]
+if changelog_path != nil
+	puts "Writing changelog to #{changelog_path}"
+	File.write(changelog_path, changelog_yaml)
+end

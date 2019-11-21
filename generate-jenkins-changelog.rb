@@ -115,7 +115,14 @@ root['version'] = new_version.sub(/jenkins-/, '')
 root['date'] = Date.parse(`git log --pretty='%ad' --date=short #{new_version}^..#{new_version}`.strip)
 root['changes'] = issues
 
-puts [root].to_yaml
+changelog_yaml = [root].to_yaml
 hidden.sort { |a, b| a['pull'] <=> b['pull'] }.each do | entry |
-	puts "  # pull: #{entry['pull']} (#{entry['message']})"
+	changelog_yaml += "\n  # pull: #{entry['pull']} (#{entry['message']})"
+end
+puts changelog_yaml
+
+changelog_path = ENV["CHANGELOG_YAML_PATH"]
+if changelog_path != nil
+	puts "Writing changelog to #{changelog_path}"
+	File.write(changelog_path, changelog_yaml)
 end
