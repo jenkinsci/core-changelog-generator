@@ -41,6 +41,7 @@ docker run -e GITHUB_AUTH=${GITHUB_AUTH} -v $(pwd):/github/workspace --rm onenas
 # lts-backports-changelog
 
 This tool can be used to generate an LTS changelog for all the backported issues (labeled `2.xyz.w-fixed` in Jira) with corresponding changelog entries in the weekly changelog YAML file.
+Weekly changelog YAML is optional, it will be downloaded from the [jenkins.io repository](https://github.com/jenkins-infra/jenkins.io/blob/master/content/_data/changelogs/weekly.yml) if not specified.
 
 ## Usage in CLI
 
@@ -58,5 +59,5 @@ export JIRA_AUTH=jira_username:jira_password
 Example:
 
 ```sh
-docker run -e GITHUB_AUTH=${GITHUB_AUTH} -e CHANGELOG_TYPE=lts -v $(pwd):/github/workspace --rm onenashev/jenkins-changelog-generator 2.109.2
+docker run -e GITHUB_AUTH=${GITHUB_AUTH} -e JIRA_AUTH=${JIRA_AUTH} -e CHANGELOG_TYPE=lts -v $(pwd):/github/workspace --rm onenashev/jenkins-changelog-generator 2.190.3
 ```
