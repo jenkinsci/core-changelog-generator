@@ -15,7 +15,7 @@ if ARGV.length < 1 || ARGV.length > 2
 	puts ""
 	puts "Default weekly.yml: https://github.com/jenkins-infra/jenkins.io/blob/master/content/_data/changelogs/weekly.yml"
 	puts ""
-	puts "Missing argument <version> and/or <weekly.yml>"
+	puts "ERROR: Wrong argument number"
 	puts "To generate the changelog for an LTS release:"
 	puts "          generate-lts-changelog.rb 2.164.3 /path/to/jenkins.io/content/_data/changelogs/weekly.yml"
 	puts ""
