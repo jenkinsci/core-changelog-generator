@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 
+require 'date'
 require 'yaml'
 require 'json'
-require 'date'
 
 git_repo = Dir.pwd
 

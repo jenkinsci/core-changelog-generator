@@ -1,6 +1,10 @@
-The Jenkins changelog is maintained in [the jenkins-infra/jenkins.io repository](https://github.com/jenkins-infra/jenkins.io/tree/master/content/_data/changelogs).
+Changelog generator for Jenkins Core
+====================
 
-The tools in this repo help with the creation of changelogs.
+[![Docker Pulls](https://img.shields.io/docker/pulls/jenkins/core-changelog-generator)](https://hub.docker.com/repository/docker/jenkins/core-changelog-generator)
+
+The tools in this repo help with the creation of Jenkins core changelog drafts ([weekly](https://jenkins.io/changelog/), [LTS](https://jenkins.io/changelog-stable/)).
+The Jenkins changelog is maintained in [the jenkins-infra/jenkins.io repository](https://github.com/jenkins-infra/jenkins.io/tree/master/content/_data/changelogs), and the generated pull requests should be submitted there.
 
 # generate-jenkins-changelog
 
@@ -28,14 +32,14 @@ Generating changelog for pending changes:
 
 ```sh
 export GITHUB_AUTH=github_username:github_token
-docker run -e GITHUB_AUTH=${GITHUB_AUTH} -v $(pwd):/github/workspace --rm onenashev/jenkins-changelog-generator
+docker run -e GITHUB_AUTH=${GITHUB_AUTH} -v $(pwd):/github/workspace --rm jenkins/core-changelog-generator
 ```
 
 Generating changelog for a release:
 
 ```sh
 export GITHUB_AUTH=github_username:github_token
-docker run -e GITHUB_AUTH=${GITHUB_AUTH} -v $(pwd):/github/workspace --rm onenashev/jenkins-changelog-generator 2.204
+docker run -e GITHUB_AUTH=${GITHUB_AUTH} -v $(pwd):/github/workspace --rm jenkins/core-changelog-generator 2.204
 ```
 
 # lts-backports-changelog
@@ -59,5 +63,5 @@ export JIRA_AUTH=jira_username:jira_password
 Example:
 
 ```sh
-docker run -e GITHUB_AUTH=${GITHUB_AUTH} -e JIRA_AUTH=${JIRA_AUTH} -e CHANGELOG_TYPE=lts -v $(pwd):/github/workspace --rm onenashev/jenkins-changelog-generator 2.190.3
+docker run -e GITHUB_AUTH=${GITHUB_AUTH} -e JIRA_AUTH=${JIRA_AUTH} -e CHANGELOG_TYPE=lts -v $(pwd):/github/workspace --rm jenkins/core-changelog-generator 2.109.2
 ```
