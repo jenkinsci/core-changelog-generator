@@ -61,11 +61,28 @@ diff.each_line do |line|
 
 			labels = pr_json['labels'].map { |l| l["name"] }
 
+			#TODO(oleg_nenashev): Some code refactorig would be cool to avoid such manual checks and ordering
+			# Type for changelog rendering. Higher priorities are in the bottom
 			entry['type'] = 'TODO'
-			entry['type'] = 'major bug' if labels.include?("major-bug")
-			entry['type'] = 'major rfe' if labels.include?("major-rfe")
+			entry['type'] = 'rfe' if labels.include?("localization")
+			entry['type'] = 'rfe' if labels.include?("developer")
+			entry['type'] = 'rfe' if labels.include?("internal")
 			entry['type'] = 'bug' if labels.include?("bug")
 			entry['type'] = 'rfe' if labels.include?("rfe")
+			entry['type'] = 'major bug' if labels.include?("major-bug")
+			entry['type'] = 'major rfe' if labels.include?("major-rfe")
+			entry['type'] = 'major bug' if labels.include?("regression-fix")
+
+			# Category for changelog ordering. Higher priorities are in the bottom
+			entry['category'] = 'TODO'
+			entry['category'] = 'localization' if labels.include?("localization")
+			entry['category'] = 'developer' if labels.include?("developer")
+			entry['category'] = 'internal' if labels.include?("internal")
+			entry['category'] = 'bug' if labels.include?("bug")
+			entry['category'] = 'rfe' if labels.include?("rfe")
+			entry['category'] = 'major bug' if labels.include?("major-bug")
+			entry['category'] = 'major rfe' if labels.include?("major-rfe")
+			entry['category'] = 'regression' if labels.include?("regression-fix")
 
 			entry['pull'] = pr[1].to_i
 			if issue != nil
@@ -89,7 +106,12 @@ diff.each_line do |line|
 				entry['message'] = "PR title: #{pr_json['title']}"
 				hidden << entry
 			else
-				entry['message'] = "TODO fixup changelog:\nPR title: #{pr_json['title']}\nProposed changelog:\n#{proposed_changelog.strip}"
+				prefix=""
+				suffix=""
+				prefix="Developer:\n" if labels.include?("developer")
+				prefix="Internal:\n" if labels.include?("internal")
+				suffix="\n(regression in TODO)" if labels.include?("regression-fix")
+				entry['message'] = "#{prefix}TODO fixup changelog:\nPR title: #{pr_json['title']}\nProposed changelog:\n#{proposed_changelog.strip}#{suffix}"
 				issues << entry
 			end
 		else
@@ -100,12 +122,12 @@ diff.each_line do |line|
 	end
 end
 
-issues_by_type = issues.group_by { |issue| issue['type'] }
+issues_by_category = issues.group_by { |issue| issue['category'] }
 
 issues = []
-['major rfe', 'major bug', 'rfe', 'bug', 'TODO'].each do |type|
-	if issues_by_type.has_key?(type)
-		issues << issues_by_type[type]
+['regression', 'major rfe', 'major bug', 'rfe', 'bug', 'localization', 'developer', 'internal', 'TODO'].each do |category|
+	if issues_by_category.has_key?(category)
+		issues << issues_by_category[category]
 	end
 end
 issues = issues.flatten
