@@ -55,9 +55,12 @@ diff.each_line do |line|
 		puts "PR #{pr[1]} found for #{sha}"
 
 		pr_comment_string = `curl --fail --silent -u #{curl_auth} https://api.github.com/repos/jenkinsci/jenkins/pulls/#{pr[1]}`
+		pr_commits_string = `curl --fail --silent -u #{curl_auth} https://api.github.com/repos/jenkinsci/jenkins/pulls/#{pr[1]}/commits`
+		
 		if $?.exitstatus  == 0
 
 			pr_json = JSON.parse(pr_comment_string)
+			commits_json = JSON.parse(pr_commits_string)
 
 			labels = pr_json['labels'].map { |l| l["name"] }
 
@@ -71,6 +74,38 @@ diff.each_line do |line|
 			if issue != nil
 				entry['issue'] = issue[1].to_i
 			end
+
+			# Resolve Authors
+			# TODO(oleg_nenashev): GitHub REST API returns coauthors only as a part of the commit message string
+			# "message": "Update core/src/main/java/hudson/model/HealthReport.java\n\nCo-Authored-By: Zbynek Konecny <zbynek1729@gmail.com>"
+			# Ther is no REST API AFAICT, user => GitHub ID conversion also requires additional calls
+			authors = []
+			unresolvedAuthorEmails = []
+			unresolvedAuthorNames = Hash.new
+			commits_json.each do | commit |
+				if commit["author"] # GitHub committer info is attached
+					authors << commit["author"]["login"]
+				else
+					author = commit["commit"]["author"]
+					unresolvedAuthorEmails << author["email"]
+					unresolvedAuthorNames[author["email"]] = author["name"]
+				end
+			end
+			
+			#NOTE(oleg_nenashev): This code will be also needed for parsing co-authors
+			unresolvedAuthorEmails.uniq.each do | email | # Try resolving users by asking GitHub
+				puts "Resolving GitHub ID for #{unresolvedAuthorNames[email]} (#{email})"
+				usersearch_string = `curl --fail --silent -u #{curl_auth} https://api.github.com/search/users?q=#{email}%20in:email`
+				usersearch = JSON.parse(usersearch_string)
+				if usersearch["items"].length() > 0 
+					githubId = usersearch["items"].first["login"]
+					authors << githubId
+				else
+					authors << "TODO: #{unresolvedAuthorNames[email]} (#{email})"
+				end
+			end
+
+			entry['authors'] = authors.uniq
 
 			proposed_changelog = /### Proposed changelog entries(.*?)(###|\Z)/m.match(pr_json['body'])
 			if proposed_changelog != nil
