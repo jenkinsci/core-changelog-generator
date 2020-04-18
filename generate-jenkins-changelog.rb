@@ -29,6 +29,11 @@ if ARGV.length == 0
 	exit
 end
 
+config_path=ENV['CONFIG_PATH']
+puts "Reading changelog configuration from #{config_path}"
+config = YAML.load(File.read(config_path))
+all_authors = []
+
 if ARGV[0] =~ /\.\./
 	# this is a commit range
 	new_version = ARGV[0].split('..')[1]
@@ -64,6 +69,7 @@ diff.each_line do |line|
 
 			labels = pr_json['labels'].map { |l| l["name"] }
 
+			#TODO(oleg_nenashev): Extend release drafter format to fetch types from there?
 			#TODO(oleg_nenashev): Some code refactorig would be cool to avoid such manual checks and ordering
 			# Type for changelog rendering. Higher priorities are in the bottom
 			entry['type'] = 'TODO'
@@ -76,16 +82,20 @@ diff.each_line do |line|
 			entry['type'] = 'major rfe' if labels.include?("major-rfe")
 			entry['type'] = 'major bug' if labels.include?("regression-fix")
 
-			# Category for changelog ordering. Higher priorities are in the bottom
-			entry['category'] = 'TODO'
-			entry['category'] = 'localization' if labels.include?("localization")
-			entry['category'] = 'developer' if labels.include?("developer")
-			entry['category'] = 'internal' if labels.include?("internal")
-			entry['category'] = 'bug' if labels.include?("bug")
-			entry['category'] = 'rfe' if labels.include?("rfe")
-			entry['category'] = 'major bug' if labels.include?("major-bug")
-			entry['category'] = 'major rfe' if labels.include?("major-rfe")
-			entry['category'] = 'regression' if labels.include?("regression-fix")
+			# Fetch categories by labels
+			config['categories'].each do | category |
+				if category['label'] != nil
+					entry['category'] = category['title'] if labels.include?(category['label'])
+				end
+				if category['labels'] != nil
+					if !(labels & category['labels']).empty?
+						entry['category'] = category['title'] 
+					end
+				end
+			end
+			if entry['category'] == nil
+				entry['category'] = 'TODO'
+			end
 
 			entry['pull'] = pr[1].to_i
 			if issue != nil
@@ -123,6 +133,7 @@ diff.each_line do |line|
 			end
 
 			entry['authors'] = authors.uniq
+			all_authors += entry['authors']
 
 			proposed_changelog = /### Proposed changelog entries(.*?)(###|\Z)/m.match(pr_json['body'])
 			if proposed_changelog != nil
@@ -137,6 +148,7 @@ diff.each_line do |line|
 				proposed_changelog = "(No proposed changelog)"
 			end
 
+			entry['pr_title'] = pr_json['title']
 			if labels.include?("skip-changelog")
 				entry['message'] = "PR title: #{pr_json['title']}"
 				hidden << entry
@@ -158,28 +170,88 @@ diff.each_line do |line|
 end
 
 issues_by_category = issues.group_by { |issue| issue['category'] }
+all_authors = all_authors.uniq
 
-issues = []
-['regression', 'major rfe', 'major bug', 'rfe', 'bug', 'localization', 'developer', 'internal', 'TODO'].each do |category|
-	if issues_by_category.has_key?(category)
-		issues << issues_by_category[category]
+# Prepare ordered category list
+categories = []
+config['categories'].each do | category |
+	categories << category['title']
+end
+
+def writeYAML(issues_by_category, categories, hidden, new_version)
+	issues = []
+	categories.each do |category|
+		if issues_by_category.has_key?(category)
+			issues << issues_by_category[category]
+		end
+	end
+	issues = issues.flatten
+
+	root = {}
+	root['version'] = new_version.sub(/jenkins-/, '')
+	root['date'] = Date.parse(`git log --pretty='%ad' --date=short #{new_version}^..#{new_version}`.strip)
+	root['changes'] = issues
+
+	changelog_yaml = [root].to_yaml
+	hidden.sort { |a, b| a['pull'] <=> b['pull'] }.each do | entry |
+		changelog_yaml += "\n  # pull: #{entry['pull']} (#{entry['message']})"
+	end
+	puts changelog_yaml
+
+	changelog_path = ENV["CHANGELOG_YAML_PATH"]
+	if changelog_path != nil
+		puts "Writing changelog to #{changelog_path}"
+		File.write(changelog_path, changelog_yaml)
 	end
 end
-issues = issues.flatten
 
-root = {}
-root['version'] = new_version.sub(/jenkins-/, '')
-root['date'] = Date.parse(`git log --pretty='%ad' --date=short #{new_version}^..#{new_version}`.strip)
-root['changes'] = issues
+def writeMarkdown(config, issues_by_category, categories, hidden, all_authors)
+	changelog_path = ENV["CHANGELOG_MD_PATH"]
+	if changelog_path == nil
+		puts "Will not write Markdown changelog, destination is undefined"
+		return
+	end
+	
+	changelog = ""
+	
+	changelog << "**Disclaimer**: This is an automatically generated changelog draft for Jenkins weekly releases.\n" 
+	changelog << "See https://jenkins.io/changelog/ for the official changelogs.\n"
+	changelog << "For `changelog.yaml` drafts see GitHub action artifacts attached to release commits.\n"
 
-changelog_yaml = [root].to_yaml
-hidden.sort { |a, b| a['pull'] <=> b['pull'] }.each do | entry |
-	changelog_yaml += "\n  # pull: #{entry['pull']} (#{entry['message']})"
-end
-puts changelog_yaml
+	categories.each do |category|
+		if issues_by_category.has_key?(category)
+			changelog << "\n## #{category}\n\n"
+			issues_by_category[category].each do |issue|
+				entry = issue['pr_title']
+				authors = issue['authors'] != nil ? issue['authors'].map{ |author| "@#{author}" }.join(' ') : ""
+				changelog_entry = "* #{entry} (##{issue['pull']}) #{authors}\n"
 
-changelog_path = ENV["CHANGELOG_YAML_PATH"]
-if changelog_path != nil
+				# Apply replacers
+				if config['replacers'] != nil
+					config['replacers'].each do |replacer|
+						if replacer['search'].start_with?("/")
+							# TODO: Only globals are supported at the moment
+							regex = replacer['search'].gsub(/\/(.*)\/g/,'\1')
+							replace_by = replacer['replace'].gsub("$", "\\")
+							puts "replace #{regex} to #{replace_by}"
+							changelog_entry = changelog_entry.gsub(/#{regex}/, replace_by)
+						else
+							changelog_entry = changelog_entry.gsub(replacer['search'], replacer['replace'])
+						end
+					end
+				end
+				changelog << changelog_entry
+			end
+		end
+	end
+
+	all_authors = all_authors != nil ? all_authors.map{ |author| "@#{author}" }.join(' ') : ""
+	changelog << "\nAll contributors: #{all_authors}\n"
+
+	puts changelog
 	puts "Writing changelog to #{changelog_path}"
-	File.write(changelog_path, changelog_yaml)
+	File.write(changelog_path, changelog)
 end
+
+writeYAML(issues_by_category, categories, hidden, new_version)
+writeMarkdown(config, issues_by_category, categories, hidden, all_authors)
