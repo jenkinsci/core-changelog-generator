@@ -77,10 +77,10 @@ diff.each_line do |line|
 			entry['type'] = 'rfe' if labels.include?("developer")
 			entry['type'] = 'rfe' if labels.include?("internal")
 			entry['type'] = 'bug' if labels.include?("bug")
+			entry['type'] = 'bug' if labels.include?("regression-fix")
 			entry['type'] = 'rfe' if labels.include?("rfe")
 			entry['type'] = 'major bug' if labels.include?("major-bug")
 			entry['type'] = 'major rfe' if labels.include?("major-rfe")
-			entry['type'] = 'major bug' if labels.include?("regression-fix")
 
 			# Fetch categories by labels
 			config['categories'].each do | category |
