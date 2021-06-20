@@ -12,25 +12,25 @@ hidden = []
 curl_auth = ENV['GITHUB_AUTH']
 
 if Dir.glob("licenseCompleter.groovy").empty?
-	puts "Usage:    generate-jenkins-changelog.rb <versions>"
-	puts ""
-	puts "This script needs to be run from a jenkinsci/jenkins clone."
+	STDERR.puts "Usage:    generate-jenkins-changelog.rb <versions>"
+	STDERR.puts ""
+	STDERR.puts "This script needs to be run from a jenkinsci/jenkins clone."
 	exit
 end
 
 if ARGV.length == 0
-	puts "Usage:    generate-jenkins-changelog.rb <versions>"
-	puts ""
-	puts "Missing argument <versions>"
-	puts "To generate the changelog between two commits or tags, specify then with '..' separator:"
-	puts "          generate-jenkins-changelog.rb jenkins-2.174..master"
-	puts "To generate the changelog for an existing Jenkins release (i.e. from the previous release), specify the version number:"
-	puts "          generate-jenkins-changelog.rb 2.174"
+	STDERR.puts "Usage:    generate-jenkins-changelog.rb <versions>"
+	STDERR.puts ""
+	STDERR.puts "Missing argument <versions>"
+	STDERR.puts "To generate the changelog between two commits or tags, specify then with '..' separator:"
+	STDERR.puts "          generate-jenkins-changelog.rb jenkins-2.174..master"
+	STDERR.puts "To generate the changelog for an existing Jenkins release (i.e. from the previous release), specify the version number:"
+	STDERR.puts "          generate-jenkins-changelog.rb 2.174"
 	exit
 end
 
 config_path=ENV['CONFIG_PATH']
-puts "Reading changelog configuration from #{config_path}"
+STDERR.puts "Reading changelog configuration from #{config_path}"
 config = YAML.load(File.read(config_path))
 all_authors = []
 
@@ -44,7 +44,7 @@ else
 	previous_version = "#{splitted.first}.#{splitted.last.to_i - 1}"
 end
 
-puts "Checking range from #{previous_version} to #{new_version}"
+STDERR.puts "Checking range from #{previous_version} to #{new_version}"
 
 # We generally want --first-parent here unless it's the weekly after a security update
 # In that case, the merge commit after release will hide anything merged Monday through Wednesday
@@ -57,7 +57,7 @@ diff.each_line do |line|
 	issue = /JENKINS-([0-9]{3,5})/.match(full_message.encode("UTF-16be", :invalid=>:replace, :replace=>"?").encode('UTF-8'))
 	entry = {}
 	if pr != nil
-		puts "PR #{pr[1]} found for #{sha}"
+		STDERR.puts "PR #{pr[1]} found for #{sha}"
 
 		pr_comment_string = `curl --fail --silent -u #{curl_auth} https://api.github.com/repos/jenkinsci/jenkins/pulls/#{pr[1]}`
 		pr_commits_string = `curl --fail --silent -u #{curl_auth} https://api.github.com/repos/jenkinsci/jenkins/pulls/#{pr[1]}/commits`
@@ -121,7 +121,7 @@ diff.each_line do |line|
 			
 			#NOTE(oleg_nenashev): This code will be also needed for parsing co-authors
 			unresolvedAuthorEmails.uniq.each do | email | # Try resolving users by asking GitHub
-				puts "Resolving GitHub ID for #{unresolvedAuthorNames[email]} (#{email})"
+				STDERR.puts "Resolving GitHub ID for #{unresolvedAuthorNames[email]} (#{email})"
 				usersearch_string = `curl --fail --silent -u #{curl_auth} https://api.github.com/search/users?q=#{email}%20in:email`
 				usersearch = JSON.parse(usersearch_string)
 				if usersearch["items"].length() > 0 
@@ -137,7 +137,11 @@ diff.each_line do |line|
 
 			proposed_changelog = /### Proposed changelog entries(.*?)(###|\Z)/m.match(pr_json['body'])
 			if proposed_changelog != nil
-				proposed_changelog = proposed_changelog[1].gsub("\r\n", "\n").gsub(/<!--.*?-->/m, "").strip
+				proposed_changelog = proposed_changelog[1]
+				    .gsub("\r\n", "\n")
+				    .gsub(/<!--.*?-->/m, "")
+				    .gsub(/`(.+?)`/, '<code>\1</code>')
+				    .gsub("\*", "").strip
 			end
 
 			# The presence of '\n' in this string is significant:
@@ -155,17 +159,17 @@ diff.each_line do |line|
 			else
 				prefix=""
 				suffix=""
-				prefix="Developer:\n" if labels.include?("developer")
+				prefix="Developer: " if labels.include?("developer")
 				prefix="Internal:\n" if labels.include?("internal")
 				suffix="\n(regression in TODO)" if labels.include?("regression-fix")
-				entry['message'] = "#{prefix}TODO fixup changelog:\nPR title: #{pr_json['title']}\nProposed changelog:\n#{proposed_changelog.strip}#{suffix}"
+				entry['message'] = "#{prefix}TODO fixup changelog\n#{proposed_changelog.strip}#{suffix}"
 				issues << entry
 			end
 		else
-			puts "Failed to retrieve PR metadata for <<<<<#{pr[1]}>>>>>"
+			STDERR.puts "Failed to retrieve PR metadata for <<<<<#{pr[1]}>>>>>"
 		end
 	else
-		puts "No PR found for #{sha}: <<<<<#{full_message.lines.first.strip}>>>>>"
+		STDERR.puts "No PR found for #{sha}: <<<<<#{full_message.lines.first.strip}>>>>>"
 	end
 end
 
@@ -192,7 +196,7 @@ def writeYAML(issues_by_category, categories, hidden, new_version)
 	root['date'] = Date.parse(`git log --pretty='%ad' --date=short #{new_version}^..#{new_version}`.strip)
 	root['changes'] = issues
 
-	changelog_yaml = [root].to_yaml
+	changelog_yaml = [root].to_yaml.lines[1..-1].join
 	hidden.sort { |a, b| a['pull'] <=> b['pull'] }.each do | entry |
 		changelog_yaml += "\n  # pull: #{entry['pull']} (#{entry['message']})"
 	end
@@ -200,7 +204,7 @@ def writeYAML(issues_by_category, categories, hidden, new_version)
 
 	changelog_path = ENV["CHANGELOG_YAML_PATH"]
 	if changelog_path != nil
-		puts "Writing changelog to #{changelog_path}"
+		STDERR.puts "Writing changelog to #{changelog_path}"
 		File.write(changelog_path, changelog_yaml)
 	end
 end
@@ -208,7 +212,7 @@ end
 def writeMarkdown(config, issues_by_category, categories, hidden, all_authors)
 	changelog_path = ENV["CHANGELOG_MD_PATH"]
 	if changelog_path == nil
-		puts "Will not write Markdown changelog, destination is undefined"
+		STDERR.puts "Will not write Markdown changelog, destination is undefined"
 		return
 	end
 	
@@ -233,7 +237,7 @@ def writeMarkdown(config, issues_by_category, categories, hidden, all_authors)
 							# TODO: Only globals are supported at the moment
 							regex = replacer['search'].gsub(/\/(.*)\/g/,'\1')
 							replace_by = replacer['replace'].gsub("$", "\\")
-							puts "replace #{regex} to #{replace_by}"
+							STDERR.puts "replace #{regex} to #{replace_by}"
 							changelog_entry = changelog_entry.gsub(/#{regex}/, replace_by)
 						else
 							changelog_entry = changelog_entry.gsub(replacer['search'], replacer['replace'])
@@ -248,8 +252,8 @@ def writeMarkdown(config, issues_by_category, categories, hidden, all_authors)
 	all_authors = all_authors != nil ? all_authors.map{ |author| "@#{author}" }.join(' ') : ""
 	changelog << "\nAll contributors: #{all_authors}\n"
 
-	puts changelog
-	puts "Writing changelog to #{changelog_path}"
+  puts changelog
+	STDERR.puts "Writing changelog to #{changelog_path}"
 	File.write(changelog_path, changelog)
 end
 
