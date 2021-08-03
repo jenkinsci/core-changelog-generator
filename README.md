@@ -32,14 +32,14 @@ Generating changelog for pending changes:
 
 ```sh
 export GITHUB_AUTH=github_username:github_token
-docker run -e GITHUB_AUTH=${GITHUB_AUTH} -v $(pwd):/github/workspace --rm jenkins/core-changelog-generator
+docker run -e GITHUB_AUTH=${GITHUB_AUTH} -e LANG=C.UTF-8 -v $(pwd):/github/workspace --rm jenkins/core-changelog-generator
 ```
 
 Generating changelog for a release:
 
 ```sh
 export GITHUB_AUTH=github_username:github_token
-docker run -e GITHUB_AUTH=${GITHUB_AUTH} -v $(pwd):/github/workspace --rm jenkins/core-changelog-generator 2.204
+docker run -e GITHUB_AUTH=${GITHUB_AUTH} -e LANG=C.UTF-8 -v $(pwd):/github/workspace --rm jenkins/core-changelog-generator 2.204
 ```
 
 # lts-backports-changelog
@@ -63,5 +63,5 @@ export JIRA_AUTH=jira_username:jira_password
 Example:
 
 ```sh
-docker run -e GITHUB_AUTH=${GITHUB_AUTH} -e JIRA_AUTH=${JIRA_AUTH} -e CHANGELOG_TYPE=lts -v $(pwd):/github/workspace --rm jenkins/core-changelog-generator 2.109.2
+docker run -e GITHUB_AUTH=${GITHUB_AUTH} -e LANG=C.UTF-8 -e JIRA_AUTH=${JIRA_AUTH} -e CHANGELOG_TYPE=lts -v $(pwd):/github/workspace --rm jenkins/core-changelog-generator 2.109.2
 ```
