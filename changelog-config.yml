@@ -1,0 +1,35 @@
+# most specific labels first
+
+categories:
+  - title: developer
+    labels:
+      - developer
+      - dependencies
+  - title: major rfe
+    labels:
+      - breaking
+  - title: internal
+    labels:
+      - chore
+      - internal
+  - title: major rfe
+    labels:
+      - major-enhancement
+      - major-rfe
+  - title: major bug
+    labels:
+      - major-bug
+  - title: rfe
+    labels:
+      - enhancement
+      - feature
+      - rfe
+  - title: regression
+    labels:
+      - regression-fix
+      - regression
+  - title: bug
+    labels:
+      - bug
+      - fix
+      - bugfix
