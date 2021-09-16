@@ -160,7 +160,7 @@ diff.each_line do |line|
 				prefix=""
 				suffix=""
 				prefix="Developer: " if labels.include?("developer")
-				prefix="Internal:\n" if labels.include?("internal")
+				prefix="Internal: " if labels.include?("internal")
 				suffix="\n(regression in TODO)" if labels.include?("regression-fix")
 				entry['message'] = "#{prefix}TODO fixup changelog\n#{proposed_changelog.strip}#{suffix}"
 				issues << entry
