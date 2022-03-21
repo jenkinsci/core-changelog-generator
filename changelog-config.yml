@@ -24,6 +24,7 @@ categories:
       - enhancement
       - feature
       - rfe
+      - removed
   - title: regression
     labels:
       - regression-fix
