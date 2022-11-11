@@ -142,7 +142,7 @@ diff.each_line do |line|
 				    .gsub("\r\n", "\n")
 				    .gsub(/<!--.*?-->/m, "")
 				    .gsub(/`(.+?)`/, '<code>\1</code>')
-				    .gsub("\*", "").strip
+				    .gsub("-", "").strip
 			end
 
 			# The presence of '\n' in this string is significant:
