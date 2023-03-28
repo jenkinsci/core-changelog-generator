@@ -25,6 +25,7 @@ categories:
       - feature
       - rfe
       - removed
+      - localization
   - title: regression
     labels:
       - regression-fix
