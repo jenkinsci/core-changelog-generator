@@ -17,4 +17,7 @@ ENV CHANGELOG_YAML_PATH=/github/workspace/changelog.yaml
 ENV CHANGELOG_MD_PATH=/github/workspace/changelog.md
 ENV CONFIG_PATH=/jenkins-changelog-generator/config/release-drafter.yml
 
+# Allow clone and other git operations in a directory not owned by the current user
+RUN git config --global --add safe.directory /github/workspace
+
 ENTRYPOINT ["/jenkins-changelog-generator/bin/jenkins-changelog-generator"]
