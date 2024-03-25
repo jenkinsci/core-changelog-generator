@@ -2,6 +2,7 @@
 
 if Dir.glob("*").empty?
     puts "Running in empty directory, '/src/jenkins' is not passed as volume. Will clone the repository"
+    system("git config --global --add safe.directory %s" % [Dir.getwd])
     system("git clone https://github.com/jenkinsci/jenkins.git .")
     if $?.exitstatus  != 0
         puts "ERROR: Clone failed"

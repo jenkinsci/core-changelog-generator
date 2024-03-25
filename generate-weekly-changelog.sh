@@ -12,6 +12,7 @@ CHANGELOG_GENERATOR_REPO=jenkinsci/core-changelog-generator
 if [ ! -d "../jenkins.io" ]
 then
     cd ../
+    git config --global --add safe.directory $(pwd)
     gh repo clone ${JENKINS_IO_REPO}
 
     cd jenkins
@@ -20,6 +21,7 @@ fi
 if [ ! -d "../core-changelog-generator" ]
 then
     cd ../
+    git config --global --add safe.directory $(pwd)
     gh repo clone ${CHANGELOG_GENERATOR_REPO}
 
     cd jenkins
