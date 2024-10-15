@@ -64,6 +64,8 @@ cat << EOF > /tmp/weekly.yaml
 # MALFORMED FILE CONTENTS WILL BREAK THE SITE BUILD
 EOF
 
+python3 -m venv venv
+source venv/bin/activate
 pip3 install -r ../core-changelog-generator/requirements.txt
 
 ../core-changelog-generator/replace-changelog-entry.py "${NEXT_JENKINS_VERSION}" ../jenkins.io/content/_data/changelogs/weekly.yml /tmp/new-changelog-entry.yaml \
