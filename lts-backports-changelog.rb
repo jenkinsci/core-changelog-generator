@@ -13,7 +13,7 @@ curl_auth = ENV['JIRA_AUTH']
 if ARGV.length < 1 || ARGV.length > 2
 	puts "Usage:    generate-lts-changelog.rb <LTS version> [weekly.yml]"
 	puts ""
-	puts "Default weekly.yml: https://github.com/jenkins-infra/jenkins.io/blob/master/content/_data/changelogs/weekly.yml"
+	puts "Default weekly.yml: https://github.com/jenkins-infra/jenkins.io/blob/main/content/_data/changelogs/weekly.yml"
 	puts ""
 	puts "ERROR: Wrong argument number"
 	puts "To generate the changelog for an LTS release:"
@@ -34,8 +34,8 @@ backports_str = `bash -c #{escaped_command}`
 backports = backports_str.lines.collect { |x| x.chomp }
 
 if weekly_changelog_file == nil
-  puts "WARNING: Weekly changelog YAML is not specified. Using https://github.com/jenkins-infra/jenkins.io/blob/master/content/_data/changelogs/weekly.yml"
-  weekly_changelog_file = "https://raw.githubusercontent.com/jenkins-infra/jenkins.io/master/content/_data/changelogs/weekly.yml"
+  puts "WARNING: Weekly changelog YAML is not specified. Using https://github.com/jenkins-infra/jenkins.io/blob/main/content/_data/changelogs/weekly.yml"
+  weekly_changelog_file = "https://raw.githubusercontent.com/jenkins-infra/jenkins.io/main/content/_data/changelogs/weekly.yml"
 end
 
 if weekly_changelog_file =~ /https:\/\//
