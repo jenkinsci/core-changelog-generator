@@ -67,6 +67,8 @@ diff.each_line do |line|
 			pr_json = JSON.parse(pr_comment_string)
 			commits_json = JSON.parse(pr_commits_string)
 
+			pr_creator = pr_json["user"]["login"]
+
 			labels = pr_json['labels'].map { |l| l["name"] }
 
 			#TODO(oleg_nenashev): Extend release drafter format to fetch types from there?
@@ -110,26 +112,43 @@ diff.each_line do |line|
 			authors = []
 			unresolvedAuthorEmails = []
 			unresolvedAuthorNames = Hash.new
+			uniqueAuthorName = Hash.new
+
 			commits_json.each do | commit |
 				if commit["author"] # GitHub committer info is attached
-					authors << commit["author"]["login"]
+					author = commit["author"]["login"]
+					authors << author
+					uniqueAuthorName[commit["commit"]["author"]["name"]] = author
 				else
 					author = commit["commit"]["author"]
 					unresolvedAuthorEmails << author["email"]
 					unresolvedAuthorNames[author["email"]] = author["name"]
 				end
 			end
-			
+
 			#NOTE(oleg_nenashev): This code will be also needed for parsing co-authors
 			unresolvedAuthorEmails.uniq.each do | email | # Try resolving users by asking GitHub
 				STDERR.puts "Resolving GitHub ID for #{unresolvedAuthorNames[email]} (#{email})"
+
+				unresolved_author_name = unresolvedAuthorNames[email]
+				# Check if this name is already mapped to a GitHub ID
+				if uniqueAuthorName.key?(unresolved_author_name)
+					authors << uniqueAuthorName[unresolved_author_name]
+					next
+				end
+
 				usersearch_string = `curl --fail --silent -u #{curl_auth} https://api.github.com/search/users?q=#{email}%20in:email`
 				usersearch = JSON.parse(usersearch_string)
-				if usersearch["items"].length() > 0 
+				if usersearch["items"].length() > 0
 					githubId = usersearch["items"].first["login"]
 					authors << githubId
+					uniqueAuthorName[unresolved_author_name] = githubId
 				else
-					authors << "TODO: #{unresolvedAuthorNames[email]} (#{email})"
+					if pr_creator
+						authors << pr_creator # Fallback to PR creator
+					else
+						authors << "TODO: #{unresolved_author_name} (#{email})"
+					end
 				end
 			end
 
