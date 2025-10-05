@@ -1,0 +1,26 @@
+name: 'Jenkins Core Changelog Generator'
+description: 'Generates a changelog for Jenkins core.'
+author: 'NotMyFault'
+inputs:
+  changelog-yaml-path:
+    description: 'Path to the output changelog.yaml file'
+    default: '/github/workspace/changelog.yaml'
+    required: false
+  changelog-md-path:
+    description: 'Path to the output changelog.md file'
+    default: '/github/workspace/changelog.md'
+    required: false
+  config-path:
+    description: 'Path to the release-drafter config file'
+    default: '/jenkins-changelog-generator/config/release-drafter.yml'
+    required: false
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    CHANGELOG_YAML_PATH: ${{ inputs.changelog-yaml-path }}
+    CHANGELOG_MD_PATH: ${{ inputs.changelog-md-path }}
+    CONFIG_PATH: ${{ inputs.config-path }}
+branding:
+  icon: 'file-text'
+  color: 'orange'
