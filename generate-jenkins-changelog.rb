@@ -187,7 +187,7 @@ def writeYAML(issues_by_category, categories, hidden, new_version)
 	issues = []
 	categories.each do |category|
 		if issues_by_category.has_key?(category)
-			issues << issues_by_category[category]
+			issues.concat(issues_by_category[category])
 		end
 	end
 	issues = issues.flatten
