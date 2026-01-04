@@ -70,7 +70,7 @@ diff.each_line do |line|
 			labels = pr_json['labels'].map { |l| l["name"] }
 
 			#TODO(oleg_nenashev): Extend release drafter format to fetch types from there?
-			#TODO(oleg_nenashev): Some code refactorig would be cool to avoid such manual checks and ordering
+			#TODO(oleg_nenashev): Some code refactoring would be cool to avoid such manual checks and ordering
 			# Type for changelog rendering. Higher priorities are in the bottom
 			entry['type'] = 'TODO'
 			entry['type'] = 'rfe' if labels.include?("localization")
@@ -82,6 +82,7 @@ diff.each_line do |line|
 			entry['type'] = 'rfe' if labels.include?("removed")
 			entry['type'] = 'major bug' if labels.include?("major-bug")
 			entry['type'] = 'major rfe' if labels.include?("major-rfe")
+			entry['type'] = 'major rfe' if labels.include?("breaking")
 
 			# Fetch categories by labels
 			config['categories'].each do | category |
