@@ -61,7 +61,7 @@ diff.each_line do |line|
 
 		pr_comment_string = `curl --fail --silent -u #{curl_auth} https://api.github.com/repos/jenkinsci/jenkins/pulls/#{pr[1]}`
 		pr_commits_string = `curl --fail --silent -u #{curl_auth} https://api.github.com/repos/jenkinsci/jenkins/pulls/#{pr[1]}/commits`
-		
+
 		if $?.exitstatus  == 0
 
 			pr_json = JSON.parse(pr_comment_string)
@@ -90,7 +90,7 @@ diff.each_line do |line|
 				end
 				if category['labels'] != nil
 					if !(labels & category['labels']).empty?
-						entry['category'] = category['title'] 
+						entry['category'] = category['title']
 					end
 				end
 			end
@@ -119,13 +119,13 @@ diff.each_line do |line|
 					unresolvedAuthorNames[author["email"]] = author["name"]
 				end
 			end
-			
+
 			#NOTE(oleg_nenashev): This code will be also needed for parsing co-authors
 			unresolvedAuthorEmails.uniq.each do | email | # Try resolving users by asking GitHub
 				STDERR.puts "Resolving GitHub ID for #{unresolvedAuthorNames[email]} (#{email})"
 				usersearch_string = `curl --fail --silent -u #{curl_auth} https://api.github.com/search/users?q=#{email}%20in:email`
 				usersearch = JSON.parse(usersearch_string)
-				if usersearch["items"].length() > 0 
+				if usersearch["items"].length() > 0
 					githubId = usersearch["items"].first["login"]
 					authors << githubId
 				else
@@ -190,7 +190,7 @@ def writeYAML(issues_by_category, categories, hidden, new_version)
 			issues.concat(issues_by_category[category])
 		end
 	end
-	issues = issues.flatten
+	issues = issues.flatten.uniq
 
 	root = {}
 	root['version'] = new_version.sub(/jenkins-/, '')
@@ -216,10 +216,10 @@ def writeMarkdown(config, issues_by_category, categories, hidden, all_authors)
 		STDERR.puts "Will not write Markdown changelog, destination is undefined"
 		return
 	end
-	
+
 	changelog = ""
-	
-	changelog << "**Disclaimer**: This is an automatically generated changelog draft for Jenkins weekly releases.\n" 
+
+	changelog << "**Disclaimer**: This is an automatically generated changelog draft for Jenkins weekly releases.\n"
 	changelog << "See https://jenkins.io/changelog/ for the official changelogs.\n"
 	changelog << "For `changelog.yaml` drafts see GitHub action artifacts attached to release commits.\n"
 
@@ -253,7 +253,7 @@ def writeMarkdown(config, issues_by_category, categories, hidden, all_authors)
 	all_authors = all_authors != nil ? all_authors.map{ |author| "@#{author}" }.join(' ') : ""
 	changelog << "\nAll contributors: #{all_authors}\n"
 
-  puts changelog
+	puts changelog
 	STDERR.puts "Writing changelog to #{changelog_path}"
 	File.write(changelog_path, changelog)
 end
