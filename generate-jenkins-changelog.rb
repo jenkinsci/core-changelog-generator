@@ -63,14 +63,13 @@ diff.each_line do |line|
 		pr_commits_string = `curl --fail --silent -u #{curl_auth} https://api.github.com/repos/jenkinsci/jenkins/pulls/#{pr[1]}/commits`
 
 		if $?.exitstatus  == 0
-
 			pr_json = JSON.parse(pr_comment_string)
 			commits_json = JSON.parse(pr_commits_string)
 
 			labels = pr_json['labels'].map { |l| l["name"] }
 
 			#TODO(oleg_nenashev): Extend release drafter format to fetch types from there?
-			#TODO(oleg_nenashev): Some code refactorig would be cool to avoid such manual checks and ordering
+			#TODO(oleg_nenashev): Some code refactoring would be cool to avoid such manual checks and ordering
 			# Type for changelog rendering. Higher priorities are in the bottom
 			entry['type'] = 'TODO'
 			entry['type'] = 'rfe' if labels.include?("localization")
@@ -94,11 +93,13 @@ diff.each_line do |line|
 					end
 				end
 			end
+
 			if entry['category'] == nil
 				entry['category'] = 'TODO'
 			end
 
 			entry['pull'] = pr[1].to_i
+
 			if issue != nil
 				entry['issue'] = issue[1].to_i
 			end
@@ -106,7 +107,7 @@ diff.each_line do |line|
 			# Resolve Authors
 			# TODO(oleg_nenashev): GitHub REST API returns coauthors only as a part of the commit message string
 			# "message": "Update core/src/main/java/hudson/model/HealthReport.java\n\nCo-Authored-By: Zbynek Konecny <zbynek1729@gmail.com>"
-			# Ther is no REST API AFAICT, user => GitHub ID conversion also requires additional calls
+			# There is no REST API AFAICT, user => GitHub ID conversion also requires additional calls
 			authors = []
 			unresolvedAuthorEmails = []
 			unresolvedAuthorNames = Hash.new
@@ -125,11 +126,15 @@ diff.each_line do |line|
 				STDERR.puts "Resolving GitHub ID for #{unresolvedAuthorNames[email]} (#{email})"
 				usersearch_string = `curl --fail --silent -u #{curl_auth} https://api.github.com/search/users?q=#{email}%20in:email`
 				usersearch = JSON.parse(usersearch_string)
-				if usersearch["items"].length() > 0
+				if usersearch["items"] && usersearch["items"].length() > 0
 					githubId = usersearch["items"].first["login"]
 					authors << githubId
 				else
-					authors << "TODO: #{unresolvedAuthorNames[email]} (#{email})"
+					if email.end_with?(".local") # In case email is a private/local address not registered on GitHub
+						authors << "#{unresolvedAuthorNames[email]}"
+					else
+						authors << "TODO: #{unresolvedAuthorNames[email]} (#{email})"
+					end
 				end
 			end
 
