@@ -150,10 +150,18 @@ diff.each_line do |line|
 				    .gsub("-", "").strip
 			end
 
-			# The presence of '\n' in this string is significant:
-			# It's one of the ways the Psych YAML library uses to determine what format to print a string in.
-			# This one makes it print a string literal (starting with |), which is easier to edit.
-			# https://github.com/ruby/psych/blob/e01839af57df559b26f74e906062be6c692c89c8/lib/psych/visitors/yaml_tree.rb#L299
+			proposed_upgrade_guidelines = /### Proposed upgrade guidelines(.*?)(###|\Z)/m.match(pr_json['body'])
+			if proposed_upgrade_guidelines != nil
+				proposed_upgrade_guidelines = proposed_upgrade_guidelines[1]
+				    .gsub("\r\n", "\n")
+				    .gsub(/<!--.*?-->/m, "")
+				    .gsub(/`(.+?)`/, '<code>\1</code>')
+				    .gsub("-", "").strip
+				if proposed_upgrade_guidelines.downcase == "n/a" || proposed_upgrade_guidelines.empty?
+					proposed_upgrade_guidelines = nil
+				end
+			end
+
 			if proposed_changelog == nil || proposed_changelog.empty?
 				proposed_changelog = "(No proposed changelog)"
 			end
@@ -168,7 +176,11 @@ diff.each_line do |line|
 				prefix="Developer: " if labels.include?("developer")
 				prefix="Internal: " if labels.include?("internal")
 				suffix="\n(regression in TODO)" if labels.include?("regression-fix")
-				entry['message'] = "#{prefix}TODO fixup changelog\n#{proposed_changelog.strip}#{suffix}"
+				upgrade_guidelines_text = ""
+				if proposed_upgrade_guidelines != nil
+					upgrade_guidelines_text = "\nUpgrade guidelines: #{proposed_upgrade_guidelines}"
+				end
+				entry['message'] = "#{prefix}TODO fixup changelog\n#{proposed_changelog.strip}#{upgrade_guidelines_text}#{suffix}"
 				issues << entry
 			end
 		else
