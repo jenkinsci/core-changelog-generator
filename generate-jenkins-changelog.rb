@@ -129,7 +129,7 @@ diff.each_line do |line|
 					githubId = usersearch["items"].first["login"]
 					authors << githubId
 				else
-					authors << "TODO: #{unresolvedAuthorNames[email]} (#{email})"
+					authors << "#{unresolvedAuthorNames[email]} (#{email})"
 				end
 			end
 
