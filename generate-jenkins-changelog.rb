@@ -130,11 +130,7 @@ diff.each_line do |line|
 					githubId = usersearch["items"].first["login"]
 					authors << githubId
 				else
-					if email.end_with?(".local") # In case email is a private/local address not registered on GitHub
-						authors << "#{unresolvedAuthorNames[email]}"
-					else
-						authors << "TODO: #{unresolvedAuthorNames[email]} (#{email})"
-					end
+					authors << "#{unresolvedAuthorNames[email]} (#{email})"
 				end
 			end
 
