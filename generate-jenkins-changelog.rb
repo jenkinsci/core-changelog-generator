@@ -3,6 +3,8 @@
 require 'date'
 require 'yaml'
 require 'json'
+require 'net/http'
+require 'uri'
 
 git_repo = Dir.pwd
 
@@ -184,7 +186,55 @@ config['categories'].each do | category |
 	categories << category['title']
 end
 
-def writeYAML(issues_by_category, categories, hidden, new_version)
+def fetch_tested_configurations
+	jenkinsfile_urls = [
+		'https://raw.githubusercontent.com/jenkinsci/jenkins/master/Jenkinsfile',
+		'https://raw.githubusercontent.com/jenkinsci/acceptance-test-harness/master/Jenkinsfile',
+	]
+
+	all_platforms = []
+	all_jdks = []
+
+	jenkinsfile_urls.each do |url|
+		begin
+			uri = URI.parse(url)
+			response = Net::HTTP.get(uri)
+
+			platforms_match = response.match(/platforms:\s*\[([^\]]+)\]/)
+			if platforms_match
+				all_platforms += platforms_match[1].split(',').map { |p| p.strip.gsub(/['"]/, '') }
+			end
+
+			jdks_match = response.match(/jdks:\s*\[([^\]]+)\]/)
+			if jdks_match
+				all_jdks += jdks_match[1].split(',').map { |j| j.strip.gsub(/['"]/, '') }
+			end
+		rescue => e
+			STDERR.puts "Warning: failed to fetch #{url}: #{e.message}"
+		end
+	end
+
+	all_platforms = all_platforms.uniq.sort
+	all_jdks = all_jdks.uniq.sort
+
+	if all_platforms.empty? && all_jdks.empty?
+		STDERR.puts "Warning: could not parse any tested configurations from Jenkinsfiles"
+		return nil
+	end
+
+	{
+		'platforms' => all_platforms,
+		'jdks' => all_jdks,
+		'packages' => ['deb', 'msi', 'rpm', 'war'],
+		'sources' => [
+			{ 'title' => 'Core CI', 'url' => 'https://github.com/jenkinsci/jenkins/blob/master/Jenkinsfile' },
+			{ 'title' => 'Acceptance Tests', 'url' => 'https://github.com/jenkinsci/acceptance-test-harness/blob/master/Jenkinsfile' },
+			{ 'title' => 'Packaging', 'url' => 'https://github.com/jenkinsci/packaging/blob/master/Makefile' },
+		],
+	}
+end
+
+def writeYAML(issues_by_category, categories, hidden, new_version, tested_configurations)
 	issues = []
 	categories.each do |category|
 		if issues_by_category.has_key?(category)
@@ -196,6 +246,9 @@ def writeYAML(issues_by_category, categories, hidden, new_version)
 	root = {}
 	root['version'] = new_version.sub(/jenkins-/, '')
 	root['date'] = Date.parse(`git log --pretty='%ad' --date=short #{new_version}^..#{new_version}`.strip)
+	if tested_configurations
+		root['tested_configurations'] = tested_configurations
+	end
 	root['changes'] = issues
 
 	changelog_yaml = [root].to_yaml.lines[1..-1].join
@@ -259,5 +312,6 @@ def writeMarkdown(config, issues_by_category, categories, hidden, all_authors)
 	File.write(changelog_path, changelog)
 end
 
-writeYAML(issues_by_category, categories, hidden, new_version)
+tested_configurations = fetch_tested_configurations
+writeYAML(issues_by_category, categories, hidden, new_version, tested_configurations)
 writeMarkdown(config, issues_by_category, categories, hidden, all_authors)
